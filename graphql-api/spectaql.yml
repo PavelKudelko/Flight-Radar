@@ -1,0 +1,53 @@
+spectaql:
+  logoFile: ./assets/tamk-logo.png
+  faviconFile: ./assets/tamk-logo.png
+  displayAllServers: true
+
+introspection:
+  removeTrailingPeriodFromDescriptions: false
+  schemaFile: ./schema.graphql
+  queryNameStrategy: capitalizeFirst
+  fieldExpansionDepth: 2
+
+extensions:
+  graphqlScalarExamples: true
+
+info:
+  title: FlightRadar GraphQL API
+  description: |
+    # FlightRadar GraphQL API Documentation
+
+    This API provides real-time and historical aircraft position data for flight tracking and analysis.
+
+    ## Basic Usage
+    To query data, use the root `Query` object. You can:
+    - Fetch the latest aircraft positions with a `limit`
+    - Filter aircraft data by ICAO code (aircraft identifier)
+    - Filter aircraft data by flight number (callsign)
+
+    ## Example Query
+    ```graphql
+    query {
+      aircraftPositions(limit: 5) {
+        flight
+        latitude
+        longitude
+        altitude
+        timestamp
+      }
+    }
+    ```
+  contact:
+    name: Pavel Kudelko
+    email: pavel.kudelko@tuni.fi
+    url: https://github.com/PavelKudelko
+  x-introItems:
+    - title: Getting Started
+      description: Use this API to access real-time flight data. Supports `GraphQL` queries with flexible filtering options.
+    - title: Data Sources
+      description: Flight data is collected from tamk's own FlightRadar station based on raspi4 and jetvisor A3 antenna.
+
+servers:
+  - url: http://172.16.6.183/graphql
+    description: FlightRadar GraphQL API Server
+    production: true

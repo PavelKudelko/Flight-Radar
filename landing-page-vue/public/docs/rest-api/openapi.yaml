@@ -1,0 +1,192 @@
+openapi: 3.0.0
+info:
+  title: rest-api-flightradar
+  version: 1.3.1
+  description: |
+    ## ✈️ FlightRadar REST API
+    ### This openapi document provides endpoints for querying and monitoring aircraft position database.
+
+    ### Data format and response example
+    - **Data Format**: The response will be a JSON array containing flight objects. Each flight object includes the following fields:
+        - `id` (integer): Unique identifier for the flight.
+        - `icao` (string): ICAO code for the flight.
+        - `flight` (string): Flight number or identifier.
+        - `latitude` (float): Current latitude of the flight.
+        - `longitude` (float): Current longitude of the flight.
+        - `altitude` (integer): Current altitude of the flight.
+        - `speed` (integer): Current speed of the flight.
+        - `heading` (integer): Current heading of the flight.
+        - `timestamp` (string): Timestamp of the flight data.
+    ### Example Response
+    ``` json
+    [
+      {
+        "id": 0,
+        "icao": "",
+        "flight": "",
+        "latitude": 0,
+        "longitude": 0,
+        "altitude": 0,
+        "speed": 0,
+        "heading": 0,
+        "timestamp": ""
+      }
+    ]
+    ```
+  license:
+    name: MIT
+  contact:
+    name: Pavel Kudelko
+    email: pavel.kudelko@tuni.fi
+    url: https://github.com/PavelKudelko
+servers:
+  - url: http://172.16.6.183/
+
+paths:
+  /api/flights/getall/{limit}:
+    get:
+      summary: Get all flight data with limit
+      description: |
+        ## Get All Flights
+        This endpoint retrieves a list of all flights currently available in the system.
+      parameters:
+        - name: limit
+          in: path
+          required: true
+          schema:
+            type: integer
+            default: 100
+          description: Maximum number of flight records to return
+      responses:
+        '200':
+          description: A list of flight records
+        '500':
+          description: Database query error
+
+  /api/flights/getbyicao/{id}:
+    get:
+      summary: Get flight data by ICAO code
+      description: |
+          ### Get Flight Information by ICAO
+          This endpoint retrieves flight information based on the provided ICAO code. The ICAO (International Civil Aviation Organization) code is a unique identifier for each aircraft and is used to specify the flight data.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ICAO code of the flight
+      responses:
+        '200':
+          description: Flight data for the given ICAO
+        '404':
+          description: Flight not found
+        '500':
+          description: Failed to fetch flight
+
+  /api/flights/recent:
+    get:
+      summary: Get recent flights
+      description: |
+        ## Retrieve Recent Flights
+        This endpoint allows users to fetch a list of recent flights based on a specified timestamp and limit.
+      parameters:
+        - name: since
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: ISO timestamp from which to fetch recent flights (defaults to last 30 minutes)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 100
+          description: Maximum number of results
+      responses:
+        '200':
+          description: Recent flight data
+        '500':
+          description: Failed to fetch recent flights
+
+  /api/flights/{icao}/latest:
+    get:
+      summary: Get latest position of a flight by ICAO
+      description: |
+        ## Get Latest Flight Information
+        This endpoint retrieves the latest flight information for a specific flight based on its ICAO code.
+      parameters:
+        - name: icao
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ICAO code of the flight
+      responses:
+        '200':
+          description: Latest flight position
+        '404':
+          description: No data for this flight
+        '500':
+          description: Failed to fetch latest position
+
+  /api/flights/{icao}/history:
+    get:
+      summary: Get flight history by ICAO and time range
+      description: |
+        ## Get Flight History
+        This endpoint retrieves the historical flight data for a specific flight identified by its ICAO code. The user can specify a time range for the data retrieval using the `start` and `end` query parameters. end of the time range for the data to be retrieved.
+        ### Notes
+        - Ensure the `start` timestamp is earlier than the `end` timestamp to avoid errors.
+        - The response will contain an array of flight records, which may be empty if no data is available for the specified time range.
+      parameters:
+        - name: icao
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ICAO code of the flight
+        - name: start
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: Start timestamp for flight history
+        - name: end
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date-time
+          description: End timestamp for flight history (defaults to current time)
+      responses:
+        '200':
+          description: Flight history
+        '400':
+          description: Missing required 'start' parameter
+        '500':
+          description: Failed to fetch flight history
+
+  /api/flights/meta/stats:
+    get:
+      summary: Get flight database metadata (stats)
+      description: |
+        ## Get Flight Statistics
+        This endpoint retrieves metadata statistics related to flight data from the server. It provides insights into the number of records available and the size of the database used for storing flight information.
+      responses:
+        '200':
+          description: Row count and database size
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  row_count:
+                    type: integer
+                  db_size:
+                    type: string
+        '500':
+          description: Failed to fetch metadata

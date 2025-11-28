@@ -1,0 +1,98 @@
+"""
+Represents the positional and flight data of an aircraft at a specific point in time.
+"""
+type AircraftPositions {
+  """
+  Internal incremental identifier for this position record (e.g., 1, 2, 3...).
+  Primarily used for internal database reference.
+  """
+  id: ID!
+
+  """
+  ICAO 24-bit address of the aircraft (hexadecimal string).
+  """
+  icao: String
+
+  """
+  Flight number or callsign of the aircraft.
+  """
+  flight: String
+
+  """
+  Current latitude of the aircraft in decimal degrees.
+  """
+  latitude: Float
+
+  """
+  Current longitude of the aircraft in decimal degrees.
+  """
+  longitude: Float
+
+  """
+  Altitude of the aircraft in feet.
+  """
+  altitude: Float
+
+  """
+  Ground speed of the aircraft in knots.
+  """
+  speed: Float
+
+  """
+  Heading or track angle of the aircraft in degrees.
+  """
+  heading: Float
+
+  """
+  Timestamp of the data point in ISO 8601 format (e.g., "2025-06-26T12:34:56Z").
+  """
+  timestamp: String
+}
+
+"""
+The root query type for accessing aircraft position data.
+Provides various filtering options to retrieve real-time or recent aircraft data.
+"""
+type Query {
+  """
+  Returns the most recent aircraft positions, limited to the given number of entries.
+
+  Example:
+  {
+    aircraftPositions(limit: 10) {
+      flight
+      latitude
+      longitude
+    }
+  }
+  """
+  aircraftPositions(limit: Int!): [AircraftPositions]
+
+  """
+  Returns aircraft position history by ICAO (International Civil Aviation Organization) aircraft address.
+
+  Example:
+  {
+    aircraftByICAO(icao: "3c6444", limit: 5) {
+      flight
+      altitude
+      timestamp
+    }
+  }
+  """
+  aircraftByICAO(icao: String!, limit: Int!): [AircraftPositions]
+
+  """
+  Returns aircraft position history by flight identifier (e.g., callsign or flight number).
+
+  Example:
+  {
+    aircraftByFlight(flight: "SAS123", limit: 5) {
+      latitude
+      longitude
+      timestamp
+    }
+  }
+  """
+  aircraftByFlight(flight: String!, limit: Int!): [AircraftPositions]
+}

@@ -1,0 +1,96 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto
+    container_name: mosquitto
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    ports:
+      - 1883:1883
+      - 9001:9001
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      - flightradar-network
+  # db service
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: XXXX
+      POSTGRES_PASSWORD: XXXX
+      POSTGRES_DB: flightradar_data
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_db:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    networks:
+      - flightradar-network
+  # mqtt to postgress service
+  mqtt-to-postgres:
+    build:
+      context: ./mqtt-to-postgres
+      dockerfile: Dockerfile
+    container_name: mqtt-to-postgres
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+      - postgres
+    networks:
+      - flightradar-network
+  # NodeJS rest api for fetching data from db
+  rest-api:
+    build:
+      context: ./rest-api
+      dockerfile: Dockerfile
+    ports:
+      - 3001:3001
+    container_name: rest-api
+    restart: unless-stopped
+    depends_on:
+      - mosquitto
+      - postgres
+      - mqtt-to-postgres
+    networks:
+      - flightradar-network
+  # NodeJS graphql api for fething data from postgres db
+  graphql-api:
+    build:
+      context: ./graphql-api
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    container_name: graphql-api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    networks:
+      - flightradar-network
+  # NGINX as reverse proxy for the api
+  nginx:
+    build:
+      # Now build ngix from docker file of the vue app. check it at ./landing-page-vue/Dockerfile
+      # It build both vue app for production and ngix
+      context: ./landing-page-vue
+      dockerfile: Dockerfile
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - rest-api
+      - graphql-api
+    networks:
+      - flightradar-network
+
+volumes:
+  postgres_db:
+    driver: local
+networks:
+  flightradar-network:
+     driver: bridge
